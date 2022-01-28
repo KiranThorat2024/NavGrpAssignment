@@ -126,7 +126,7 @@ def callback(data):
     distance = get_distance(data)
 
     #dist_control(distance)
-    TTC_control(distance)
+    #TTC_control(distance)
 
 
 if __name__ == '__main__':
