@@ -19,5 +19,5 @@
   <!--<node pkg="race" name="control_node" type="control.py" output="screen"/>-->
   <node pkg="race" name="sim_connector_node" type="sim_connector.py"/>
   <node pkg="race" name="keyboard_node" type="keyboard.py" output="screen"/>
-  <node pkg="automatic_emergency_braking" name="sae_aeb_" type="sae_aeb_.py" output="screen"/>
+  <node pkg="automatic_emergency_braking" name="sae_aeb_Vivek" type="sae_aeb_Vivek.py" output="screen"/>
 </launch>
