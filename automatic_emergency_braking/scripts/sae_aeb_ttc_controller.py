@@ -20,7 +20,7 @@ STEERING_ANGLE = 0  # Steering angle is uncontrolled
 
 # P-Controller Parameters
 kp_dist = 0.70
-kp_ttc = 0.5
+kp_ttc = 0.9
 
 # Initial velocity
 VELOCITY_TTC = VELOCITY
@@ -47,11 +47,11 @@ def dist_control(distance):
     if velocity >= VELOCITY:
         velocity = VELOCITY
     # Clamp velocity to 0 when practically stopped
-    elif velocity <= 0.01:
+    elif velocity <= 0.05:
         velocity = 0
 
-    print("Distance before collision is = ", distance)
-    print("Vehicle velocity= ", velocity)
+    print("Distance before collision is = ", round(distance, 2))
+    print("Vehicle velocity= ", round(velocity, 2))
 
     msg = AckermannDriveStamped()
     msg.drive.speed = velocity
@@ -76,7 +76,7 @@ def TTC_control(distance):
         if VELOCITY_TTC >= VELOCITY:
             VELOCITY_TTC = VELOCITY
         # Clamp velocity to 0 when practically stopped
-        elif VELOCITY_TTC <= 0.01:
+        elif VELOCITY_TTC <= 0.05:
             VELOCITY_TTC = 0
 
         print("Distance = ", round(distance, 2))
@@ -114,7 +114,7 @@ def get_distance(data):
 
     if front_hits:      # Checks for at least 1 hit
         avg_dist /= front_hits
-        print("Front hits: ", front_hits)
+        # print("Front hits: ", front_hits)
     else:
         avg_dist = np.inf
     return avg_dist
@@ -123,10 +123,10 @@ def get_distance(data):
 def callback(data):
     # Get the distance and input it into the controller
     laserscan = data
-    distance = get_distance(data)
+    distance = get_distance(laserscan)
 
     #dist_control(distance)
-    #TTC_control(distance)
+    TTC_control(distance)
 
 
 if __name__ == '__main__':
