@@ -88,7 +88,7 @@ def follow_center(angle_right, angle_lookahead_right, data):
     el, dl = distance(angle_left, angle_lookahead_left, data)
 
     # Find Centerline error
-    centerline_error = er - el
+    centerline_error = dr - dl
     print("Distance from left wall : %f" % dl)
     print("Distance from right wall : %f" % dr)
     print("Centerline error = %f " % centerline_error)
