@@ -1,4 +1,4 @@
-# Automatic Emergency Braking #
+# Wall Following #
 Group 4 - Navistar
 
 * Cristian Valadez
