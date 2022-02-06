@@ -9,7 +9,8 @@ from ackermann_msgs.msg import AckermannDriveStamped
 # Vehicle parameters
 ANGLE_RANGE = 270  # Hokuyo 10LX has 270 degrees scan
 DISTANCE_RIGHT_THRESHOLD = 0.5  # (m)
-VELOCITY = 1.35  # Maximum meters per second
+VELOCITY_C = 1.35  # Maximum meters per second
+VELOCITY_R = 1.7  # Maximum meters per second
 
 # PID Control parameters defaults for centerline wall follow
 kp = 1.5
@@ -34,22 +35,22 @@ rate = 40.0
 rate_s = 1.0 / rate
 velocity = 0.0
 data_buffer = LaserScan()
-angle_right = 0         # Pick two rays at two angles
-angle_lookahead = 30    # lookahead angle
+angle_right = 0  # Pick two rays at two angles
+angle_lookahead = 30  # lookahead angle
 
 pub = rospy.Publisher('/vesc/ackermann_cmd_mux/input/teleop', AckermannDriveStamped, queue_size=1)
 
 
 def control(error):
     global kp, kd, ki
-    global velocity, VELOCITY
+    global velocity, VELOCITY_C, VELOCITY_R
     global error_prior, integral_prior, steering_angle_prior
     global sa_pr, vel_pr, sa_delta_pr
 
     # Steering PID controller
-    derivative = (error - error_prior)/rate_s
-    integral = integral_prior + error*rate_s
-    steering_angle = kp*error + kd*derivative + ki*integral
+    derivative = (error - error_prior) / rate_s
+    integral = integral_prior + error * rate_s
+    steering_angle = kp * error + kd * derivative + ki * integral
 
     # Update priors
     error_prior = error
@@ -64,23 +65,32 @@ def control(error):
     steering_delta = steering_angle - steering_angle_prior
     steering_angle_prior = steering_angle
 
-    if np.abs(error) < 0.1:
-        velocity = VELOCITY
-    elif np.abs(error) < 0.125:
-        velocity = 1.25
-    elif np.abs(error) < 0.15:
-        velocity = 1.0
-    elif np.abs(error) < 0.16:
-        velocity = 0.75
-    else:
-        if RIGHT_WALL_MODE:
-            velocity = 0.4
+    if RIGHT_WALL_MODE:
+        if error > 0.14:
+            velocity = 0.325
+        elif error < 0.14:
+            velocity = VELOCITY_R - kp * error
+        elif error < -0.7:
+            velocity = 0.35
+        elif error < 0.01:
+            velocity = VELOCITY_R + kp * error
         else:
-            velocity = 0.5
-
-    # Set maximum threshold for velocity
-    if velocity > VELOCITY:
-        velocity = VELOCITY
+            velocity = VELOCITY_R
+            
+        # Set maximum threshold for velocity
+        if velocity > VELOCITY_R:
+            velocity = VELOCITY_R
+    else:
+        if np.abs(error) < 0.1:
+            velocity = VELOCITY_C
+        elif np.abs(error) < 0.125:
+            velocity = 1.25
+        elif np.abs(error) < 0.15:
+            velocity = 1.0
+        elif np.abs(error) < 0.16:
+            velocity = 0.7
+        else:
+            velocity = VELOCITY_C
 
     # Store for debugging
     sa_pr = "%.3f" % steering_angle
@@ -101,7 +111,7 @@ def get_index(angle, data):
 
 
 def distance(angle, angle_la, data):
-    global velocity
+    global velocity, RIGHT_WALL_MODE
     # Find the actual distance from the wall.
     # alpha is the angle of the vehicle from the desired path
     # alpha = tan^-1( (a*cos(theta) - b) / (a*sin(theta)))
@@ -118,7 +128,11 @@ def distance(angle, angle_la, data):
 
     alpha = np.arctan((a * np.cos(theta) - b) / (a * np.sin(theta)))
     dist_m = b * np.cos(alpha)
-    dist_p = dist_m + 0.5 * np.sin(alpha)
+    if RIGHT_WALL_MODE:
+        el = 0.85
+    else:
+        el = 0.5
+    dist_p = dist_m + el * np.sin(alpha)
 
     return dist_m, dist_p, alpha
 
@@ -181,9 +195,9 @@ def run():
     while not rospy.is_shutdown():
         if RIGHT_WALL_MODE:
             # Override the PID gains for the right wall follow mode
-            kp = 3.5
-            kd = 0.025
-            ki = 0.6
+            kp = 2.35
+            kd = 0.09
+            ki = 0.15
 
             # To follow right wall
             er = follow_right_wall(angle_right, angle_lookahead, data_buffer)
@@ -206,7 +220,7 @@ def run():
 
 if __name__ == '__main__':
     # Get command line argument if it was given, else defaults to Right Wall follow mode
-    if len(sys.argv) == 2:
+    if len(sys.argv) > 1:
         RIGHT_WALL_MODE = int(sys.argv[1])
 
     rospy.init_node('wall_following', anonymous=True)

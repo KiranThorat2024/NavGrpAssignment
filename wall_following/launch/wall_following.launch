@@ -1,8 +1,26 @@
 <?xml version="1.0"?>
-
 <launch>
- <!-- TO-DO: Bring up the simulator with `track_barca` world and the wall_following node -->
+<!--   <include file="$(find racecar_gazebo)/launch/racecar_tunnel.launch"/> -->
+    <!--<include file="$(find racecar_gazebo)/launch/racecar.launch"> -->
+  <include file="$(find wall_following)/launch/racecar_barca.launch">
+    <!--<arg name="world_name" value="racecar"/>-->
+    <!--<arg name="world_name" value="racecar_wall"/>-->
+    <!-- <arg name="world_name" value="track_porto"/>-->
+    <!--arg name="world_name" value="demo_track"/-->
+    <!--<arg name="world_name" value="track_levine"/>-->
+    <!--<arg name="world_name" value="track_porto"/>-->
+    <arg name="world_name" value="track_barca"/>
+    <!--<arg name="world_name" value="follow_line"/>-->
+    <!--<arg name="world_name" value="lane_keep"/>-->
 
 
+
+  </include>
+
+  <!--<node pkg="race" name="control_node" type="control.py" output="screen"/>-->
+  <node pkg="race" name="sim_connector_node" type="sim_connector.py"/>
+  <node pkg="race" name="keyboard_node" type="keyboard.py" output="screen"/>
+
+  <arg name="right_wall_mode"/>
+  <node pkg="wall_following" name="sae_wall_following" type="sae_wall_following.py" output="screen" args="$(arg right_wall_mode)"/>
 </launch>
-
