@@ -48,6 +48,7 @@ pt_B = [0, vt_lim2]
 pt_C = [width, vt_lim2]
 pt_D = [width - hz_offset, vt_lim1]
 im_crop = im_gray[vt_lim1:vt_lim2][0:width]
+height_crop, width_crop = im_crop.shape
 print(vt_lim1, vt_lim2)
 
 # L2 norm used to derive the new height. Width remains the same
@@ -74,14 +75,58 @@ _, im_bin = cv.threshold(im_blur, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 # Canny edge detector
 canny_thresholds = [100, 200]  # Through experimentation found test image max value threshold reached 1520. Robust image
 im_canny = getCanny(im_bin, canny_thresholds[0], canny_thresholds[1])
-im_hough = cv.cvtColor(im_canny, cv.COLOR_GRAY2BGR)     # So we can overlay color lines over canny edges
+im_hough = cv.cvtColor(im_canny, cv.COLOR_GRAY2BGR)  # So we can overlay color lines over canny edges
 
 # Probabilistic Hough lines
 linesP = cv.HoughLinesP(im_canny, 1, np.pi / 180, 50, None, 50, 10)
 if linesP is not None:
+    intercepts_height = np.zeros(len(linesP), dtype=float)
+    m = np.zeros(len(linesP), dtype=float)
+    b = np.zeros(len(linesP), dtype=float)
     for i in range(0, len(linesP)):
         line = linesP[i][0]
-        cv.line(im_hough, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 3, cv.LINE_AA)
+        cv.line(im_hough, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 2, cv.LINE_AA)
+        # line = np.asarray(line, dtype=float)        # Convert to float now
+
+        # Find where each line intercepts lower edge of image (y=height)
+        m[i] = (line[3] - line[1]) / (line[2] - line[0])
+        b[i] = line[1] - m[i]*line[0]
+
+        intercepts_height[i] = (height_crop - line[1]) / m[i] + line[0]
+    centerpoint = int((np.min(intercepts_height) + np.max(intercepts_height)) / 2)
+    cv.line(im_hough, (centerpoint, 0), (centerpoint, height_crop), (0, 255, 0), 2, cv.LINE_AA)
+    print("centerline: ", centerpoint)
+    print("average slope: ", round(np.average(m),2), "intercept: ", round(np.average(b),2))
+    print("m:", m, "b:", b)
+
+    # Now try to get average of left side and right side lines, then get average from those 2 lines
+    left_line = [0., 0., 0]
+    right_line = [0., 0., 0]
+    for i in range(0, len(m)):
+        if m[i] < 0.:        # Left line
+            left_line[0] += m[i]
+            left_line[1] += b[i]
+            left_line[2] += 1       # Counter
+        else:               # Right line
+            right_line[0] += m[i]
+            right_line[1] += b[i]
+            right_line[2] += 1  # Counter
+    # Average. TODO TAKE CARE OF DIVISON BY 0
+    left_line[0] /= left_line[2]
+    left_line[1] /= left_line[2]
+    right_line[0] /= right_line[2]
+    right_line[1] /= right_line[2]
+    print("L: ", left_line, "R: ", right_line)
+
+cv.line(im_hough, (0, int(left_line[1])), (width, int(left_line[0]*width + left_line[1])), (255, 255, 0), 2, cv.LINE_AA)
+cv.line(im_hough, (0, int(right_line[1])), (width, int(right_line[0]*width + right_line[1])), (255, 255, 0), 2, cv.LINE_AA)
+
+# Now get average of two lines
+proj_line = [(left_line[0]+right_line[0])/2, (left_line[1]+right_line[1])/2]
+print("Proj: ", proj_line)
+print("y @0: ", int(proj_line[1]))
+print("y @width: ", int(proj_line[0]*width + proj_line[1]))
+cv.line(im_hough, (0, int(proj_line[1])), (width, int(proj_line[0]*width + proj_line[1])), (0, 255, 255), 2, cv.LINE_AA)
 
 # cv.imshow("Original", im)
 cv.imshow("Initial ROI", im_crop)
@@ -91,7 +136,7 @@ cv.imshow("Hough", im_hough)
 # cv.imshow("ROI", crop)
 # cv.imshow("Warped", im_warped)
 # cv.imshow("Warped 2", im_warped2)
-cv.waitKey(200)
+cv.waitKey(500)
 
 # settings = termios.tcgetattr(sys.stdin)
 # while 1:
@@ -110,6 +155,12 @@ cv.waitKey(200)
 #     im_canny = getCanny(im_bin, canny_minVal, canny_maxVal)
 #     cv.imshow("Canny", im_canny)
 #     cv.waitKey(100)
+
+a = np.array([2, 3, 2])
+b = a
+b[0:1] = b[2]
+print(b)
+
 
 while True:
     inp = input("Cmd: ")
