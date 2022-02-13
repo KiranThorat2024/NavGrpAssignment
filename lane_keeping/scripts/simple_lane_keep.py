@@ -71,18 +71,22 @@ class LaneKeepAssist(object):
         left_m = [0., 0., 0]
         right_m = [0., 0., 0]
 
-        for i in range(0, len(_lines)):
-            _l = np.asarray(_lines[i][0], dtype=float)
-            m = (_l[3] - _l[1]) / (_l[2] - _l[0])  # Compute slope of line
-            b = _l[1] - m * _l[0]  # Compute y intercept
-            if m > 0:  # Slope is positive, this is a right lane
-                right_m[0] += m
-                right_m[1] += b
-                right_m[2] += 1
-            else:  # Slope is negative, this is a left lane
-                left_m[0] += m
-                left_m[1] += b
-                left_m[2] += 1
+        if _lines is None:
+            left_m[0] = None
+            right_m[0] = None
+        else:
+            for i in range(0, len(_lines)):
+                _l = np.asarray(_lines[i][0], dtype=float)
+                m = (_l[3] - _l[1]) / (_l[2] - _l[0])  # Compute slope of line
+                b = _l[1] - m * _l[0]  # Compute y intercept
+                if m > 0:  # Slope is positive, this is a right lane
+                    right_m[0] += m
+                    right_m[1] += b
+                    right_m[2] += 1
+                else:  # Slope is negative, this is a left lane
+                    left_m[0] += m
+                    left_m[1] += b
+                    left_m[2] += 1
 
         # Now compute average of left and right lane slopes and draw lines
         if right_m[2] > 0:
@@ -102,25 +106,38 @@ class LaneKeepAssist(object):
             left_m[0] = None
 
         # Compute average slope between left and right lanes
+        # Honestly, avg_m is not used in the way the algorithm was implemented
         if left_m[0] is not None and right_m[0] is not None:
             avg_m = (left_m[0] + right_m[0]) / 2
 
             # Draw projected centerline
-            center_proj = (((self.height_cropped - left_m[1]) / left_m[0]) +
-                           ((self.height_cropped - right_m[1]) / right_m[0])) / 2
+            center_proj = int((((self.height_cropped - left_m[1]) / left_m[0]) +
+                               ((self.height_cropped - right_m[1]) / right_m[0])) / 2)
             cv.line(_im, (int(center_proj), self.height_cropped),
                     (int(center_proj), self.height_cropped - 50), (0, 255, 0), 2, cv.LINE_AA)
 
             print("Left lane m:", round(left_m[0], 3), " Right lane m:", round(right_m[0], 3),
-                  "Avg m:", round(avg_m, 3), "Center:", round(center_proj, 3))
+                  "Avg m:", round(avg_m, 3), "Center:", center_proj)
+
         else:       # At least one of the lanes could not be detected
-            print("Couldn't detect one of the lanes..")
-            # Method below increases the projected center in the way it was going to try and recapture the lane
-            if self.prev_center_proj > self.width/2:
-                center_proj = self.prev_center_proj + 4
-                self.prev_center_proj = center_proj
-            else:
-                center_proj = self.prev_center_proj - 4
+            if left_m[0] is None:
+                if right_m[0] is None:
+                    # Both lanes lost, all hope is lost, abort... just ignore for now though
+                    print("Couldn't detect either lane")
+                    center_proj = self.prev_center_proj
+                else:       # Left lane was lost, so turn left some more to try and recapture lane with camera
+                    print("Couldn't detect left lane..")
+                    if self.prev_center_proj > self.width/2:        # Was going wrong direction, fixt that
+                        center_proj = self.width/2
+                    else:
+                        center_proj = self.prev_center_proj - 4     # Try to get robot to turn more
+            else:           # Right lane was lost, so turn right some more to try and recapture lane with camera
+                print("Couldn't detect right lane..")
+                if self.prev_center_proj < self.width / 2:  # Was going wrong direction, fixt that
+                    center_proj = self.width / 2
+                else:
+                    center_proj = self.prev_center_proj + 4  # Try to get robot to turn more
+
         self.prev_center_proj = center_proj     # Retain previous center projection
 
         # Draw desired centerline director
@@ -130,7 +147,7 @@ class LaneKeepAssist(object):
                 (int(self.width / 2), self.height_cropped - 50), (0, 255, 255), 2, cv.LINE_AA)
 
         cv.imshow("Extracted Lines", _im)
-        return int(center_proj), _im
+        return center_proj, _im
 
     def camera_callback(self, _data):
         self.data = _data
@@ -159,16 +176,16 @@ class LaneKeepAssist(object):
 
         sa = self.kp * error_camera_pixel
         # Clamp steering angle. Max is 2.84 m/s for turtlebot3_burger
-        if sa > 2.0:
-            sa = 2.0
-        elif sa < -2.0:
-            sa = -2.0
+        if sa > 2.84:
+            sa = 2.84
+        elif sa < -2.84:
+            sa = -2.84
 
         # Publish the steering angle and velocity
         self.msg.linear.x = self.max_velocity
         self.msg.angular.z = sa
         self.pub.publish(self.msg)
-        print("    Steering angle: %.3f Velocity: %.3f" % (sa, self.max_velocity))
+        print("    Rotation: %.3f Velocity: %.3f" % (sa, self.max_velocity))
 
         cv.waitKey(1)  # Process the opencv stuff
         self.rate.sleep()

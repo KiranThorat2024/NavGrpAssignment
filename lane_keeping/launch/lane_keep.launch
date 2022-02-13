@@ -20,6 +20,6 @@
   <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf" args="-urdf -model turtlebot3_$(arg model) -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -Y $(arg yaw) -param robot_description" />
 
 
-  <node pkg="lane_keep" type="simple_lane_keep.py" name="lane_keep" output="screen"/>
+  <node pkg="lane_keeping" type="simple_lane_keep.py" name="lka" output="screen"/>
 
 </launch>
