@@ -7,13 +7,11 @@ import cv_bridge
 from cv_bridge import CvBridge, CvBridgeError
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
-from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Int64
 from std_msgs.msg import Float32
 import math
 
 steering_angle = 0
-velocity = 0.3  # (m/s)
 
 
 class LaneKeepAssist(object):
@@ -22,8 +20,8 @@ class LaneKeepAssist(object):
         self.data = None  # This buffer holds newest callback data
         self.bridge_object = CvBridge()
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.camera_callback)
-        self.pub = rospy.Publisher('/vesc/ackermann_cmd_mux/input/teleop', AckermannDriveStamped, queue_size=1)
-        self.msg = AckermannDriveStamped()
+        self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.msg = Twist()
         self.rate = rospy.Rate(20)
 
         # Size of image is known and region of interest is fixed
@@ -35,6 +33,13 @@ class LaneKeepAssist(object):
         self.canny_thresh = [100, 200]  # [Min, Max]
         self.height_cropped = self.crop_yThresh[1] - self.crop_yThresh[0]
         print("Init complete")
+
+        # Constants
+        self.max_velocity = 0.22     # max velocity in m/s of turtlebot3 burger per specs
+        self.kp = 0.0025
+
+        # Class variables
+        self.prev_center_proj = 0.0
 
     def canny(self, _im):
         return cv.Canny(_im, self.canny_thresh[0], self.canny_thresh[1])
@@ -103,6 +108,7 @@ class LaneKeepAssist(object):
             # Draw projected centerline
             center_proj = (((self.height_cropped - left_m[1]) / left_m[0]) +
                            ((self.height_cropped - right_m[1]) / right_m[0])) / 2
+            self.prev_center_proj = center_proj
             cv.line(_im, (int(center_proj), self.height_cropped),
                     (int(center_proj), self.height_cropped - 50), (0, 255, 0), 2, cv.LINE_AA)
 
@@ -110,6 +116,7 @@ class LaneKeepAssist(object):
                   "Avg m:", round(avg_m, 3), "Center:", round(center_proj, 3))
         else:
             print("Couldn't detect one of the lanes..")
+            center_proj = self.prev_center_proj
 
         # Draw desired centerline director
         cv.line(_im, (int(self.width / 2 - 25), self.height_cropped),
@@ -118,15 +125,12 @@ class LaneKeepAssist(object):
                 (int(self.width / 2), self.height_cropped - 50), (0, 255, 255), 2, cv.LINE_AA)
 
         cv.imshow("Extracted Lines", _im)
-        return avg_m, _im
+        return int(center_proj), _im
 
     def camera_callback(self, _data):
         self.data = _data
 
     def run(self):
-        global steering_angle
-        global velocity
-
         # Convert the image message to cv data
         im = self.bridge_object.imgmsg_to_cv2(self.data, desired_encoding="bgr8")
 
@@ -141,35 +145,42 @@ class LaneKeepAssist(object):
 
         # Get average of the left and right Hough Lines and extract the centerline.
         # The angle between the extracted centerline and desired centerline will be the error.
-        avg_m, im_avg_lines = self.average_slope_intercept(im_lines, lines_p)
+        center_proj, im_avg_lines = self.average_slope_intercept(im_lines, lines_p)
 
+        # Implement the final controller
+        # Get error which is in terms of camera frame pixels
+        error_camera_pixel = -(center_proj - self.width / 2)
+        print("    Error in camera frame: ", error_camera_pixel)
 
+        sa = self.kp * error_camera_pixel
+        # Clamp steering angle. Max is 2.84 m/s for turtlebot3_burger
+        if sa > 2.0:
+            sa = 2.0
+        elif sa < -2.0:
+            sa = -2.0
 
-        # TO-DO: Implement the final controller
-        # ---
+        # Publish the steering angle and velocity
+        self.msg.linear.x = self.max_velocity
+        self.msg.angular.z = sa
+        self.pub.publish(self.msg)
+        print("    Steering angle: %.3f Velocity: %.3f" % (sa, self.max_velocity))
 
-        # ---
-
-        # while not rospy.is_shutdown():
-        # TO-DO: Publish the steering angle and velocity
-        # ---
-
-        # ---
-
-        # vel.header.stamp = rospy.Time.now()
-        # vel.header.frame_id = "base_link"
-
-        # print("Steering angle: %f" % m)
-        # pub.publish(vel)
-        # self.rate.sleep()
-
-        # pub.publish(vel)
-
-        # Display converted images
-        # cv2.imshow('canny',canny_image)
-        # cv2.imshow('ROI',cropped_image)
         cv.waitKey(1)  # Process the opencv stuff
         self.rate.sleep()
+
+    def straight(self, loops):
+        # Drive the robot straight for loop*frequency amount of time, incrementing speed linearly until max velocity
+        i = 0
+        self.msg.angular.z = 0
+        vel_inc = self.max_velocity / loops
+        velocity = vel_inc
+        while i < loops:
+            self.msg.linear.x = velocity
+            self.pub.publish(self.msg)
+            print("Vel: %.3f i: %d" % (velocity, i))
+            velocity += vel_inc
+            i += 1
+            self.rate.sleep()
 
 
 if __name__ == '__main__':
@@ -180,5 +191,6 @@ if __name__ == '__main__':
         # Wait until first data received from camera
         pass
 
+    lka.straight(20)        # Drive straight ramping up speed for 1 second first
     while not rospy.is_shutdown():
         lka.run()
