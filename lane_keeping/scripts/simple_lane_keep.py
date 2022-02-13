@@ -108,15 +108,20 @@ class LaneKeepAssist(object):
             # Draw projected centerline
             center_proj = (((self.height_cropped - left_m[1]) / left_m[0]) +
                            ((self.height_cropped - right_m[1]) / right_m[0])) / 2
-            self.prev_center_proj = center_proj
             cv.line(_im, (int(center_proj), self.height_cropped),
                     (int(center_proj), self.height_cropped - 50), (0, 255, 0), 2, cv.LINE_AA)
 
             print("Left lane m:", round(left_m[0], 3), " Right lane m:", round(right_m[0], 3),
                   "Avg m:", round(avg_m, 3), "Center:", round(center_proj, 3))
-        else:
+        else:       # At least one of the lanes could not be detected
             print("Couldn't detect one of the lanes..")
-            center_proj = self.prev_center_proj
+            # Method below increases the projected center in the way it was going to try and recapture the lane
+            if self.prev_center_proj > self.width/2:
+                center_proj = self.prev_center_proj + 4
+                self.prev_center_proj = center_proj
+            else:
+                center_proj = self.prev_center_proj - 4
+        self.prev_center_proj = center_proj     # Retain previous center projection
 
         # Draw desired centerline director
         cv.line(_im, (int(self.width / 2 - 25), self.height_cropped),
