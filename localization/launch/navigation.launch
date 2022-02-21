@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- Global Parameters -->
+  <param name = "/use_sim_time" value = "true"/>
+  
+  <!-- Maps -->
+  <node name = "map_server" pkg = "map_server" type = "map_server" args = "$(find localization)/maps/demo.yaml" output = "screen">
+    <param name = "frame_id" value = "map"/>
+  </node>
+  
+  <!-- Stage Simulator -->
+                                            
+  <!-- Broadcast robot transforms -->
+  <node name="base_laser_link" pkg="tf" type="static_transform_publisher" args="0.265 0 0.125 0 0 0 base_link laser 100" />
+
+  <!-- Adaptive Monte Carlo Localization -->
+  <node pkg = "amcl" type = "amcl" name = "amcl" output = "screen">
+    <rosparam file = "$(find localization)/config/amcl_params.yaml" command = "load"/>
+    <param name="initial_pose_x"            value="0.0"/>
+    <param name="initial_pose_y"            value="0.0"/>
+    <param name="initial_pose_a"            value="0.0"/>
+  </node>
+
+
+  <!-- Bringup RVIZ with default parameters -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find localization)/rviz/turtlebot3_navigation.rviz"/>
+
+  <!-- Navigation -->
+  <node pkg = "move_base" type = "move_base" respawn = "false" name = "move_base" output = "screen">
+    <rosparam file = "$(find localization)/config/costmap_common_params.yaml" command = "load" ns = "global_costmap"/>
+    <rosparam file = "$(find localization)/config/costmap_common_params.yaml" command = "load" ns = "local_costmap"/>
+    <rosparam file = "$(find localization)/config/local_costmap_params.yaml" command = "load"/>
+    <rosparam file = "$(find localization)/config/global_costmap_params.yaml" command = "load"/>
+    <rosparam file = "$(find localization)/config/teb_local_planner_params.yaml" command = "load"/>
+    <!--rosparam file="$(find turtlebot3_navigation)/param/move_base_params.yaml" command="load" /-->
+    <param name = "base_global_planner" value = "global_planner/GlobalPlanner"/>
+    <param name = "planner_frequency" value = "1.0"/>
+    <param name = "planner_patience" value = "5.0"/>
+    <param name = "base_local_planner" value = "teb_local_planner/TebLocalPlannerROS"/>
+    <param name = "controller_frequency" value = "20.0"/>
+    <param name = "controller_patience" value = "15.0"/>
+    <param name = "clearing_rotation_allowed" value = "false"/>
+    <!--<remap from = "/cmd_vel" to="/vesc/ackermann_cmd_mux/input/teleop"/>-->
+    <!--<remap from="odom" to="/vesc/odom"/>-->
+  </node>
+
+  <node pkg="localization" name="twist_to_ackermann" type="twist_to_ackermann.py" output="screen"/>
+    
+</launch>
+
+
+
+

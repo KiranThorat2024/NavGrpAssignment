@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- Enable Real Time -->
+  <param name = "/use_sim_time" value = "true"/>
+
+  <!-- Mapping Default Parameters -->
+  <include file = "$(find hector_mapping)/launch/mapping_default.launch">
+    <arg name="base_frame" default="base_link"/>
+    <arg name="odom_frame" default="base_link"/>
+  </include>
+
+  <!-- Broadcast robot transforms -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="laser_frame_broadcaster" args="0.265 0 0.125 0 0 0 1 /base_link /laser" />
+
+  <!-- Load Default Parameters -->
+  <arg name = "geotiff_map_file_path" default = "$(find hector_geotiff)/maps"/>
+  
+  <include file = "$(find hector_geotiff)/launch/geotiff_mapper.launch">
+    <arg name = "trajectory_source_frame_name" value = "scanmatcher_frame"/>
+    <arg name = "map_file_path" value = "$(arg geotiff_map_file_path)"/>
+  </include>
+
+  <!-- Bringup RVIZ with default parameters -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find localization)/rviz/hector_rviz.rviz" />
+
+</launch>
