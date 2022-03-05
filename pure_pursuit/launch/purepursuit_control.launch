@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- To change the track, change the world file in the race package-->
+    <include file="$(find race)/launch/f1_tenth.launch"/>
+    <node pkg="pure_pursuit" name="pure_pursuit_node" type="pure_pursuit.py" output="screen"/> 
+</launch>

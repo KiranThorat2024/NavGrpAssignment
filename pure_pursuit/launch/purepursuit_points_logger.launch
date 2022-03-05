@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find race)/launch/f1_tenth.launch"/>
+    <node pkg="pure_pursuit" name="pure_pursuit_waypoint_logger" type="waypoint_logger.py" output="screen"/> 
+</launch>
