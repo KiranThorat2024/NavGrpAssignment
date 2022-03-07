@@ -17,7 +17,7 @@ home = expanduser('~')
 # CHANGE THIS PATH TO WHERE YOU WANT TO SAVE YOUR CSV FILE 
 r = rospkg.RosPack()
 file_path = r.get_path('pure_pursuit')
-file_name = 'new_file.csv'
+file_name = 'waypoints.csv'
 file = open(file_path + '/waypoints/' + file_name, 'w')
 ctr = 0
 print("saving to file pure_pursuit/waypoints with a name - ", file_name)
