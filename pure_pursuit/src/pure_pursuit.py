@@ -20,12 +20,6 @@ from std_msgs.msg import Header, ColorRGBA
 import matplotlib.pyplot as plt
 from matplotlib import patches
 
-# GLOBAL VARIABLES
-yaw = 0
-idx = 0
-way_x = []
-way_y = []
-
 
 class PurePursuit(object):
     def __init__(self, _waypoints):
@@ -36,6 +30,13 @@ class PurePursuit(object):
 
         # Waypoints, car variables
         self.waypoints = _waypoints
+        self.waypoints_x = []
+        self.waypoints_y = []
+        for point in self.waypoints:
+            self.waypoints_x.append(float(point[0]))
+            self.waypoints_y.append(float(point[1]))
+        # for i in range(len(way_x)):
+        #     print("i: {:d} x: {:.3f} y: {:.3f}".format(i, way_x[i], way_y[i]))
         self.LOOKAHEAD = 1.2
         self.WB = 0.3421
 
@@ -46,13 +47,11 @@ class PurePursuit(object):
         self.pure_pursuit_flag = True
         self.show_animation = True
 
+
+
         # Wait until we get at least one data back from pose callback
         while self.pose.x is None:
             time.sleep(1)
-
-        # Draw waypoint arrows
-        for w in self.waypoints:
-            self.plot_arrow(float(w[0]), float(w[1]), float(w[2]))
 
     def pose_callback(self, _data):
         # Store current car position
@@ -193,13 +192,6 @@ class PurePursuit(object):
 
     def follow_waypoints(self):
         # PURE PURSUIT CODE
-        # for point in waypoints:
-        #     way_x.append(float(point[0]))
-        #     way_y.append(float(point[1]))
-
-        # for i in range(len(way_x)):
-        #     print("i: {:d} x: {:.3f} y: {:.3f}".format(i, way_x[i], way_y[i]))
-
         try:
             while self.pure_pursuit_flag:
                 print("\nCurrent pose: ({:.2f}, {:.2f})".format(self.pose.x, self.pose.y))
@@ -229,19 +221,19 @@ class PurePursuit(object):
                 #
                 #         # publish messages
                 #
-                #         if show_animation:
-                #             plt.cla()
-                #             # for stopping simulation with the esc key.
-                #             plt.gcf().canvas.mpl_connect('key_release_event',
-                #                                          lambda event: [exit(0) if event.key == 'escape' else None])
-                #             plot_arrow(xc, yc, yaw)
-                #             plt.plot(cx, cy, "-r", label="course")
-                #             plt.plot(xc, yc, "-b", label="trajectory")
-                #             plt.plot(target_x, target_y, "xg", label="target")
-                #             plt.axis("equal")
-                #             plt.grid(True)
-                #             plt.title("Pure Pursuit Control" + str(1))
-                #             plt.pause(0.001)
+                if self.show_animation:
+                    plt.cla()
+                    # for stopping simulation with the esc key.
+                    plt.gcf().canvas.mpl_connect('key_release_event',
+                                                 lambda event: [exit(0) if event.key == 'escape' else None])
+                    self.plot_arrow(self.pose.x, self.pose.y, self.pose.yaw)
+                    plt.plot(self.waypoints_x, self.waypoints_y, "-r", label="course")
+                    plt.plot(self.pose.x, self.pose.y, "-b", label="trajectory")
+                    plt.plot(target_x, target_y, "xg", label="target")
+                    plt.axis("equal")
+                    plt.grid(True)
+                    plt.title("Pure Pursuit Control" + str(1))
+                    plt.pause(0.001)
                 #
                 #         # prints for debugging
                 #         print("pure pursuit flag:", pure_pursuit_flag)
