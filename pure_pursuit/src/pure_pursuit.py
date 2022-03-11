@@ -3,21 +3,13 @@
 from ackermann_msgs.msg import AckermannDriveStamped
 import rospy
 from race.msg import drive_param
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Point
 import math
 import numpy as np
-from numpy import linalg as la
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from tf.transformations import euler_from_quaternion
 import csv
-import os
 import rospkg
-from rospkg import RosPack
 from nav_msgs.msg import Odometry
 import time
-from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Quaternion, Pose, Point, Vector3
-from std_msgs.msg import Header, ColorRGBA
 import matplotlib.pyplot as plt
 from matplotlib import patches
 
@@ -67,11 +59,6 @@ class PurePursuit(object):
         self.pose.euler = euler_from_quaternion(self.pose.quaternion)
         self.pose.yaw = self.pose.euler[2]
 
-    def find_distance(self, x1, y1):
-        global xc, yc, yaw, waypoints
-        distance = math.sqrt((x1 - xc) ** 2 + (y1 - yc) ** 2)
-        return distance
-
     def find_distance_index_based(self, _idx):
         x1 = float(self.waypoints[_idx][0])
         y1 = float(self.waypoints[_idx][1])
@@ -92,7 +79,6 @@ class PurePursuit(object):
 
         # Interpolation algorithm
         # Find intersection between circle of radius LOOKAHEAD and two nearest waypoints
-        # TODO: NEED TO UPDATE THIS VERTICAL LINE SECTION
         if x2 == x1:  # Need to check for vertical line to avoid slope calculation divide by 0
             # Calculate distance from point (center of circle to line)
             dist = np.abs(h - x1)
@@ -125,7 +111,7 @@ class PurePursuit(object):
             else:  # One solution
                 y_intp = roots[0]
                 print("Vertical line: One intersection: ({:.2f}, {:.2f})".format(x_intp, y_intp))
-        else:
+        else:  # Not a vertical line
             # Compute slope and intercept of line
             m = (y2 - y1) / (x2 - x1)
             intercept = y1 - m * x1
