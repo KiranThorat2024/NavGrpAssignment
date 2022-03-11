@@ -22,11 +22,11 @@ from matplotlib import patches
 
 
 class PurePursuit(object):
-    def __init__(self, _waypoints):
+    def __init__(self, _waypoints, _rate):
         # Subscribers, publishers, topics, etc
         rospy.Subscriber("/vesc/odom", Odometry, self.pose_callback)
         self.pub = rospy.Publisher("drive_parameters", drive_param, queue_size=1)  # velocity and angle
-        self.rate = rospy.Rate(1)
+        self.rate = rospy.Rate(_rate)
 
         # Waypoints, car variables
         self.waypoints = _waypoints
@@ -46,8 +46,6 @@ class PurePursuit(object):
         # Flags
         self.pure_pursuit_flag = True
         self.show_animation = True
-
-
 
         # Wait until we get at least one data back from pose callback
         while self.pose.x is None:
@@ -92,6 +90,7 @@ class PurePursuit(object):
 
         # Interpolation algorithm
         # Find intersection between circle of radius LOOKAHEAD and two nearest waypoints
+        # TODO: NEED TO UPDATE THIS VERTICAL LINE SECTION
         if x2 == x1:  # Need to check for vertical line to avoid slope calc divide by 0
             # Calculate distance from point (center of circle to line)
             dist = np.abs(h - x1)
@@ -104,27 +103,32 @@ class PurePursuit(object):
             # Compute the roots to find the y value (since vertical line, we already know x value)
             roots = np.real(np.roots([a, b, c]))
             print("Vertical line, Roots: ", roots)
+
+            # Calculate the discriminant to determine incidence of line and circle
+            dscmt = b ** 2 - 4 * a * c
+
             x_intp = x1
-            if dist < r:
-                # Need to pick intersection closest to next waypoint
-                if eucl_dist(x_intp, roots[0], x1, y1) < eucl_dist(x_intp, roots[1], x2, y2):
-                    y_intp = y1
+            if dscmt > 0:  # Two solutions
+                # Need to pick intersection closest to middle of next lookahead waypoints
+                mid_la_waypoint = [x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2]
+                if eucl_dist(x_intp, roots[0], mid_la_waypoint[0], mid_la_waypoint[1]) < \
+                        eucl_dist(x_intp, roots[1], mid_la_waypoint[0], mid_la_waypoint[1]):
+                    y_intp = roots[0]
                 else:
-                    y_intp = y2
+                    y_intp = roots[1]
                 print("Vertical line: Two intersections, picking: ({:.2f}, {:.2f})".format(x_intp, y_intp))
-            elif dist > r:
+            elif dscmt < 0:  # No solutions
                 y_intp = y1
                 print("Vertical line: No intersection, picking ({:.2f}, {:.2f})".format(x_intp, y_intp))
-            else:
+            else:  # One solution
                 y_intp = roots[0]
                 print("Vertical line: One intersection: ({:.2f}, {:.2f})".format(x_intp, y_intp))
         else:
             # Compute slope and intercept of line
             m = (y2 - y1) / (x2 - x1)
             intercept = y1 - m * x1
-
-            # Calculate distance from point (center of circle) to line
-            dist = np.abs(-m * h + k - 1) / np.sqrt(m ** 2 + 1)
+            print("LA Points: ({:.2f}, {:.2f}) ({:.2f}, {:.2f}) m={:.2f} b={:.2f}".
+                  format(x1, y1, x2, y2, m, intercept))
 
             # Polynomial coefficients of circle-line intersection formula
             a = 1 + m ** 2
@@ -134,28 +138,32 @@ class PurePursuit(object):
             # Compute the roots to find the x value of intercept
             roots = np.real(np.roots([a, b, c]))
             print("Roots: ", roots)
-            # From distance calculation we know if there is an intersection
-            if dist < r:
-                # Need to pick intersection closest to next waypoint
-                roots_y = [np.sqrt(r**2-(roots[0]+h)**2), np.sqrt(r**2-(roots[1]+h)**2)]
-                if eucl_dist(roots[0], roots_y[0], x1, y1) < eucl_dist(roots[1], roots_y[1], x2, y2):
+
+            # Calculate the discriminant to determine incidence of line and circle
+            dscmt = b ** 2 - 4 * a * c
+            if dscmt > 0:  # Two solutions
+                # Need to pick intersection closest to middle of next lookahead waypoints
+                mid_la_waypoint = [x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2]
+                roots_y = [m * roots[0] + intercept, m * roots[1] + intercept]
+                if eucl_dist(roots[0], roots_y[0], mid_la_waypoint[0], mid_la_waypoint[1]) < \
+                        eucl_dist(roots[1], roots_y[1], mid_la_waypoint[0], mid_la_waypoint[1]):
                     x_intp = roots[0]
                     y_intp = roots_y[0]
                 else:
                     x_intp = roots[1]
                     y_intp = roots_y[1]
-                print("Two intersections, picking: ({:.2f}, {:.2f})".format(x_intp, y_intp))
-            elif dist > r:
+                print("Two intersections: ({:.2f}, {:.2f}), ({:.2f}, {:.2f})".
+                      format(roots[0], roots_y[0], roots[1], roots_y[1]))
+            elif dscmt < 0:  # No solutions
                 x_intp = x2
                 y_intp = y2
                 print("No intersection, picking ({:.2f}, {:.2f})".format(x_intp, y_intp))
-            else:
+            else:  # One solution
                 x_intp = roots[0]
-                y_intp = np.sqrt(r**2-(roots[0]+h)**2)
+                y_intp = m * roots[0] + intercept
                 print("One intersection: ({:.2f}, {:.2f})".format(x_intp, y_intp))
 
-        # From distance calculation we know if line intersects circle
-        print("r: {:.2f} dist: {:.2f}".format(r, dist))
+        print("Target: ({:.2f}, {:.2f})".format(x_intp, y_intp))
 
         return x_intp, y_intp
 
@@ -176,74 +184,22 @@ class PurePursuit(object):
             _idx += 1
         return _idx - 1
 
-    def plot_arrow(self, _x, _y, _yaw, length=1.0, width=0.5, fc="r", ec="k"):
-        """
-        Plot arrow
-        """
-        if not isinstance(_x, float):
-            for ix, iy, iyaw in zip(_x, _y, _yaw):
-                self.plot_arrow(ix, iy, iyaw)
-        else:
-            plt.arrow(_x, _y, length * math.cos(_yaw), length * math.sin(_yaw),
-                      fc=fc, ec=ec, head_width=width, head_length=width)
-            plt.plot(_x, _y)
-            # patches.Rectangle((xc, yc), 0.35, 0.2)
-            patches.Rectangle((self.pose.x, self.pose.y), 0.35, 0.2)
-
     def follow_waypoints(self):
         # PURE PURSUIT CODE
         try:
             while self.pure_pursuit_flag:
-                print("\nCurrent pose: ({:.2f}, {:.2f})".format(self.pose.x, self.pose.y))
+                # Find nearest waypoint and calculated next waypoint lookahead distance away
                 nearest_idx = self.find_nearest_waypoint()
                 idx_near_lookahead = self.idx_close_to_lookahead(nearest_idx)
+                print("\nCurrent pose: ({:.2f}, {:.2f})".format(self.pose.x, self.pose.y))
                 print("Nearest Idx: {:d} Near LA Idx: {:d}".format(nearest_idx, idx_near_lookahead))
 
+                # Calculate target pose using interpolation
                 target_x, target_y = self.interpolate(idx_near_lookahead)
-                #
-                #         while flag == "imaginary soln":  # When there is no interpolation
-                #
-                #             # go-to-goal controller
-                #
-                #             # publish messages
-                #
-                #             # Debug info for Controller 2
-                #             print("solution :", flag)
-                #             print("nearest_index", nearest_idx)
-                #             print("nearest_index @ ", d1)
-                #             print("next index @ ", d2)
-                #             print("-------------")
-                #             if d1 > d2:
-                #                 print("next index closer than previously nearest index")
-                #                 break
-                #
-                #         # pure pursuit controller
-                #
-                #         # publish messages
-                #
+
                 if self.show_animation:
-                    plt.cla()
-                    # for stopping simulation with the esc key.
-                    plt.gcf().canvas.mpl_connect('key_release_event',
-                                                 lambda event: [exit(0) if event.key == 'escape' else None])
-                    self.plot_arrow(self.pose.x, self.pose.y, self.pose.yaw)
-                    plt.plot(self.waypoints_x, self.waypoints_y, "-r", label="course")
-                    plt.plot(self.pose.x, self.pose.y, "-b", label="trajectory")
-                    plt.plot(target_x, target_y, "xg", label="target")
-                    plt.axis("equal")
-                    plt.grid(True)
-                    plt.title("Pure Pursuit Control" + str(1))
-                    plt.pause(0.001)
-                #
-                #         # prints for debugging
-                #         print("pure pursuit flag:", pure_pursuit_flag)
-                #         print("solution :", flag)
-                #         print("nearest_waypoint", nearest_idx)
-                #         print("idx_near_lookahead", idx_near_lookahead)
-                #         print("vehicle x:", xc, "vehicle y:", yc)
-                #         print("following --> target_x :", target_x, "target_y :", target_y)
-                #         print("steering angle :", delta)
-                #         print("----------------------")
+                    self.animate(target_x, target_y, idx_near_lookahead)
+
                 self.rate.sleep()
         except IndexError:
             print("PURE PURSUIT COMPLETE --> COMPLETED ALL WAYPOINTS")
@@ -258,6 +214,27 @@ class PurePursuit(object):
         quaternion = None
         euler = None
         yaw = None
+
+    def animate(self, target_x, target_y, idx_near_lookahead):
+        plt.cla()
+        # for stopping simulation with the esc key.
+        plt.gcf().canvas.mpl_connect('key_release_event',
+                                     lambda event: [exit(0) if event.key == 'escape' else None])
+        plot_arrow(self.pose.x, self.pose.y, self.pose.yaw)
+        plt.plot(self.waypoints_x, self.waypoints_y, ".-r", label="course")
+        plt.plot(self.pose.x, self.pose.y, "-b", label="trajectory")
+        plt.plot(target_x, target_y, "xk", label="target", markersize=12)
+        plt.axline((self.waypoints_x[idx_near_lookahead], self.waypoints_y[idx_near_lookahead]),
+                   (self.waypoints_x[idx_near_lookahead + 1], self.waypoints_y[idx_near_lookahead + 1]))
+        plt.axis("equal")
+        plt.grid(True)
+        plt.title("Pure Pursuit Control")
+
+        # Add some more graphics to plot for debugging
+        ax = plt.gcf().gca()
+        ax.add_patch(plot_circle(self.pose.x, self.pose.y, self.LOOKAHEAD))
+
+        plt.pause(0.001)
 
 
 def read_points():
@@ -276,10 +253,19 @@ def eucl_dist(x1, y1, x2, y2):
     return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
+def plot_circle(_h, _k, _r):
+    return patches.Circle((_h, _k), radius=_r, color='g', fill=False)
+
+
+def plot_arrow(_x, _y, _yaw, length=1.0, width=0.5, fc="b", ec="k"):
+    plt.arrow(_x, _y, length * math.cos(_yaw), length * math.sin(_yaw),
+              fc=fc, ec=ec, head_width=width, head_length=width)
+
+
 if __name__ == '__main__':
     rospy.init_node('pure_pursuit', anonymous=True)
 
     # Create object and pass the waypoints to it
-    pure_pursuit = PurePursuit(read_points())
+    pure_pursuit = PurePursuit(_waypoints=read_points(), _rate=1)
     print("Attempting to follow waypoints...")
     pure_pursuit.follow_waypoints()
