@@ -213,22 +213,40 @@ class PurePursuit(object):
                 if run > 0:  # Going forward
                     if rise > 0:  # Positive slope
                         e = theta - self.pose.yaw
+                        print("Forward +m")
                     elif rise < 0:  # Negative slope
                         e = -theta - self.pose.yaw
+                        # e = self.pose.yaw + theta
+                        print("Forward -m")
                     else:  # Horizontal line pointing right
                         e = - self.pose.yaw
+                        print("Right horizontal")
                 elif run < 0:  # Going backward
                     if rise > 0:  # Negative slope
-                        e = np.pi - theta - self.pose.yaw
+                        # e = np.pi - theta - self.pose.yaw
+                        if self.pose.yaw > 0:
+                            e = np.pi - theta - self.pose.yaw
+                        else:
+                            e = -(np.pi + theta + self.pose.yaw)
+                        print("Backward -m")
                     elif rise < 0:  # Positive slope
-                        e = np.pi + theta - self.pose.yaw
+                        # e = np.pi + theta - self.pose.yaw
+
+                        if self.pose.yaw > 0:
+                            e = np.pi - self.pose.yaw + theta
+                        else:
+                            e = theta - np.pi - self.pose.yaw
+                        print("Backward +m")
                     else:  # Horizontal line pointing left
                         e = np.pi - self.pose.yaw
+                        print("Left horizontal")
                 else:  # Vertical line
                     if rise > 0:  # Pointing up
                         e = np.pi / 2 - self.pose.yaw
+                        print("Up vertical")
                     elif rise < 0:  # Pointing down
                         e = 3 * np.pi / 2 - self.pose.yaw
+                        print("Down vertical")
                     else:  # On the dot, don't know what to do...
                         print("Error: Current pose and waypoint are equal")
                         break
