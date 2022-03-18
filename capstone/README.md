@@ -6,6 +6,6 @@ Group 4 - Navistar
 * Amy Kofoed
 * Kiran Thorat
 
-Task1: (B) Obstacle avoidance with follow the gap
-Task2: (A) Line following with object detection
-Task3: (A) Go-to-goal using the Navigation Stack
+* Task1: (B) Obstacle avoidance with follow the gap
+* Task2: (A) Line following with object detection
+* Task3: (A) Go-to-goal using the Navigation Stack
