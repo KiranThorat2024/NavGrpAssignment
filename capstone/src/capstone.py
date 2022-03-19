@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import time
+
+import rospkg
+
 import rospy
 from cv_bridge import CvBridge
 import cv2 as cv
@@ -9,6 +12,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 import numpy as np
 from tf.transformations import euler_from_quaternion
+import pure_pursuit_tb
 
 
 class Capstone(object):
@@ -101,6 +105,9 @@ class Capstone(object):
 
     # Line following
     def task2(self):
+        # Don't need the laser scan data anymore, release the subscriber
+        self.lscan_sub.unregister()
+
         # Manipulate image and get the mask of blue line
         img = self.bridge.imgmsg_to_cv2(self.camRawData, desired_encoding='bgr8')
         img_height, img_width, _ = img.shape
@@ -146,8 +153,21 @@ class Capstone(object):
 
     # Navigation goal
     def task3(self):
-        print("***Task3:")
-        return False
+        print("***Task3: Running pure pursuit ...")
+        # Get the waypoints
+        print("Extracting waypoints...")
+        rpkg = rospkg.RosPack()
+        path_waypoints = rpkg.get_path('capstone') + '/waypoints/waypoints.csv'
+
+        # Hand over the heavy lifting to the pure pursuit module. Release subs/pubs from this module first
+        self.cam_sub.unregister()
+        self.odom_sub.unregister()
+        self.cmdvel_pub.unregister()
+        pure_pursuit = pure_pursuit_tb.PurePursuit(_waypoints=pure_pursuit_tb.read_points(path_waypoints),
+                                                   _rate=5)
+        # Follow the waypoints
+        pure_pursuit.follow_waypoints()
+        return True
 
     def run_statemachine(self):
         state = 1
@@ -208,13 +228,13 @@ def ss_iterable(_m):
 
 if __name__ == '__main__':
     rospy.init_node('capstone', anonymous=True)
-
     capstone = Capstone()
 
 
     def shutdownhook():
-        capstone.clean_class()
         rospy.loginfo("Shutdown time!")
+        if not capstone.task3_complete:
+            capstone.clean_class()
 
 
     rospy.on_shutdown(shutdownhook)
