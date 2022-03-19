@@ -9,6 +9,7 @@ project(capstone)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  cv_bridge
   sensor_msgs
   std_msgs
 )
