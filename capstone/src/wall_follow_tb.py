@@ -10,16 +10,18 @@ class WallFollow(object):
         # Variables, constants, etc
         self.laserScanData = None
         self.msg = Twist()
-        self.msg.linear.x = 0.15  # Constant linear speed
+        self.msg.linear.x = 0.22  # Constant linear speed
         self.ANGLE_PERP = 90  # Recall that 0deg is straight ahead and 90deg is straight right
         self.ANGLE_LOOKAHEAD = 60
         self.DIST_STEADY = 0.5  # This is how far we want to be from wall
+        self.MAX_STEERING_ANGLE = 2.84
         self.error = 0  # Distance error
+        self.k = 3.5
 
         # Subscribers and publishers
         self.lscan_sub = rospy.Subscriber("/scan", LaserScan, self.lscan_callback)  # Laser scan subscriber
         self.cmdvel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(15)
 
         # Wait until we get at least one data back from callbacks
         while self.laserScanData is None:
@@ -52,6 +54,13 @@ class WallFollow(object):
 
         return dist_m, dist_p, alpha
 
+    # Detect if head on collision is imminent
+    def head_on_collision_imminent(self):
+        if self.laserScanData.ranges[0] < 0.8:
+            return True
+        else:
+            return False
+
     # Run the algorithm
     def follow_the_wall(self):
         # Calculate distance from wall using two angles
@@ -64,8 +73,30 @@ class WallFollow(object):
         else:
             self.error = self.DIST_STEADY - dist_proj
 
+        # Detect if head on collision imminent, make robot start turning earlier to avoid
+        if self.head_on_collision_imminent():
+            offset = 0.5
+            steering_angle = offset
+        else:
+            offset = 0.0
+            steering_angle = self.k * self.error + offset
+
+        # Move the vehicle
+        if steering_angle > self.MAX_STEERING_ANGLE:
+            steering_angle = self.MAX_STEERING_ANGLE
+        if steering_angle < -self.MAX_STEERING_ANGLE:
+            steering_angle = -self.MAX_STEERING_ANGLE
+        self.msg.angular.z = steering_angle
+        self.cmdvel_pub.publish(self.msg)
+
         # Print some stuff for debugging
-        print("Right: {:.2f} Proj: {:.2f} Error: {:.2f}".
-              format(dist, dist_proj, self.error))
+        print("Right: {:.2f} Proj: {:.2f} Error: {:.2f} SteerAng: {:.2f} Offset: {:.1f}".
+              format(dist, dist_proj, self.error, steering_angle, offset))
 
         self.rate.sleep()
+
+    # Stop robot
+    def clean_class(self):
+        self.msg.linear.x = 0.0
+        self.msg.angular.z = 0.0
+        self.cmdvel_pub.publish(self.msg)

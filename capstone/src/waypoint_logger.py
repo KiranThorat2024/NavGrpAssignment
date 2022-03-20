@@ -17,7 +17,7 @@ home = expanduser('~')
 # CHANGE THIS PATH TO WHERE YOU WANT TO SAVE YOUR CSV FILE 
 r = rospkg.RosPack()
 file_path = r.get_path('capstone')
-file_name = 'waypoints.csv'
+file_name = 'waypoints2.csv'
 file = open(file_path + '/waypoints/' + file_name, 'w')
 ctr = 0
 print("saving to file capstone/waypoints with a name - ", file_name)

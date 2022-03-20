@@ -5,7 +5,7 @@ from cv_bridge import CvBridge
 import cv2 as cv
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan, Image
+from sensor_msgs.msg import Image
 import numpy as np
 from tf.transformations import euler_from_quaternion
 from pure_pursuit_tb import PurePursuit, read_points
@@ -15,19 +15,17 @@ from wall_follow_tb import WallFollow
 class Capstone(object):
     def __init__(self):
         # Variables, constants, etc.
-        self.laserScanData = None
         self.odom = self.CurrOdom()
         self.camRawData = None
         self.task3_complete = False
         self.bridge = CvBridge()
         self.twist_object = Twist()
-        self.fixed_linear_speed = 0.18
+        self.fixed_linear_speed = 0.22
         self.angular_rate_max = 2.84
         self.kp_task2 = 0.005
         self.wall_follow = None
 
         # Subscribers, publishers, topics, etc
-        self.lscan_sub = rospy.Subscriber("/scan", LaserScan, self.lscan_callback)  # Laser scan subscriber
         self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)  # Odometry pose subscriber
         self.cam_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.cam_callback)  # Camera subscriber
         self.cmdvel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
@@ -35,13 +33,9 @@ class Capstone(object):
         self.cmdvel_pub_rate = rospy.Rate(10)
 
         # Wait until we get at least one data back from callbacks
-        while self.laserScanData is None or self.odom.Pose.x is None or self.camRawData is None:
+        while self.odom.Pose.x is None or self.camRawData is None:
             print("Waiting for all callbacks to get at least one data back")
             self.rate.sleep()
-
-    # LaserScan callback
-    def lscan_callback(self, _data):
-        self.laserScanData = _data
 
     # Odometry callback
     def odom_callback(self, _data):
@@ -90,9 +84,6 @@ class Capstone(object):
 
     # Line following
     def task2(self):
-        # Don't need the laser scan data anymore, release the subscriber
-        self.lscan_sub.unregister()
-
         # Manipulate image and get the mask of blue line
         img = self.bridge.imgmsg_to_cv2(self.camRawData, desired_encoding='bgr8')
         img_height, img_width, _ = img.shape
@@ -132,10 +123,6 @@ class Capstone(object):
         print("**Task2: Err: {:.2f} AngRate: {:.2f}".format(err, angular_rate))
         cv.waitKey(1)
 
-    def clean_task2(self):
-        self.clean_class()
-        cv.destroyAllWindows()
-
     # Navigation goal
     def task3(self):
         print("***Task3: Running pure pursuit ...")
@@ -154,12 +141,20 @@ class Capstone(object):
         pure_pursuit.follow_waypoints()
         return True
 
+    def clean_task1(self):
+        self.wall_follow.clean_class()
+
+    def clean_task2(self):
+        self.clean_class()
+        cv.destroyAllWindows()
+
     def run_statemachine(self):
         state = 1
         while not self.task3_complete:  # Run state machine until task 3 is complete
             if state == 1:
                 self.task1()
                 if self.odom.Pose.y >= 4.0:
+                    self.clean_task1()
                     state = 2
             elif state == 2:
                 self.task2()

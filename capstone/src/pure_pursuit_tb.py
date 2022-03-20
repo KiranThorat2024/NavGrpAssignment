@@ -33,7 +33,7 @@ class PurePursuit(object):
             self.waypoints_y.append(float(point[1]))
         self.LOOKAHEAD = 0.8
         self.WB = 0.3421
-        self.MAX_VELOCITY = 0.18
+        self.MAX_VELOCITY = 0.22
         self.k = 0.75
 
         # Flags

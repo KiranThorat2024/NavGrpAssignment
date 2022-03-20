@@ -40,6 +40,57 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <model name='universe'>
+      <model name='single_line_capstone'>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>500 500</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.5</mu>
+                <mu2>0.5</mu2>
+              </ode>
+              <torsional>
+                <ode/>
+              </torsional>
+            </friction>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual_0'>
+          <pose>0 0 0 0 -0 0</pose>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <uri>model://single_line_capstone/materials/scripts</uri>
+              <uri>model://single_line_capstone/materials/textures</uri>
+              <name>path/kobuki</name>
+            </script>
+          </material>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
+      <!-- <pose>4.1988 4.26573 0 0 -0 0</pose> -->
+      <pose>2.79856 1.12607 -0.139655 0 -0 0</pose>
+    </model>
       <model name='cardboard_box'>
         <pose>-2.07196 3.6347 0.010345 0 0 -1.52548</pose>
         <link name='link'>
@@ -667,464 +718,8 @@
           <kinematic>0</kinematic>
         </link>
       </model>
-      <model name='cardboard_box_clone_17'>
-        <pose>1.67455 -6.10214 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_18'>
-        <pose>2.28951 -5.92063 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_19'>
-        <pose>2.5479 -4.10393 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
       <model name='cardboard_box_clone_2'>
         <pose>-2.17427 5.72729 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_20'>
-        <pose>3.33931 -2.81081 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_21'>
-        <pose>3.12737 -2.21568 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_22'>
-        <pose>2.9166 -1.64963 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_23'>
-        <pose>3.04318 -1.05828 0.010345 0 0 -1.52548</pose>
-        <link name='link'>
-          <inertial>
-            <mass>2</mass>
-            <inertia>
-              <ixx>0.0416667</ixx>
-              <ixy>0</ixy>
-              <ixz>0</ixz>
-              <iyy>0.0566667</iyy>
-              <iyz>0</iyz>
-              <izz>0.0683333</izz>
-            </inertia>
-            <pose>0 0 0 0 -0 0</pose>
-          </inertial>
-          <collision name='collision'>
-            <geometry>
-              <box>
-                <size>0.5 0.4 0.3</size>
-              </box>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>1</mu>
-                  <mu2>1</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode>
-                  <kp>1e+07</kp>
-                  <kd>1</kd>
-                  <min_depth>0.001</min_depth>
-                  <max_vel>0.1</max_vel>
-                </ode>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual'>
-            <pose>0 0 -0.15 0 -0 0</pose>
-            <geometry>
-              <mesh>
-                <uri>model://cardboard_box/meshes/cardboard_box.dae</uri>
-                <scale>1.25932 1.00745 0.755591</scale>
-              </mesh>
-            </geometry>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-      </model>
-      <model name='cardboard_box_clone_24'>
-        <pose>3.2687 -0.499463 0.010345 0 0 -1.52548</pose>
         <link name='link'>
           <inertial>
             <mass>2</mass>
@@ -1579,56 +1174,6 @@
           <kinematic>0</kinematic>
         </link>
       </model>
-      <model name='single_line'>
-        <static>1</static>
-        <link name='link'>
-          <collision name='collision'>
-            <geometry>
-              <plane>
-                <normal>0 0 1</normal>
-                <size>500 500</size>
-              </plane>
-            </geometry>
-            <surface>
-              <friction>
-                <ode>
-                  <mu>0.5</mu>
-                  <mu2>0.5</mu2>
-                </ode>
-                <torsional>
-                  <ode/>
-                </torsional>
-              </friction>
-              <contact>
-                <ode/>
-              </contact>
-              <bounce/>
-            </surface>
-            <max_contacts>10</max_contacts>
-          </collision>
-          <visual name='visual_0'>
-            <pose>0 0 0 0 -0 0</pose>
-            <cast_shadows>0</cast_shadows>
-            <geometry>
-              <plane>
-                <normal>0 0 1</normal>
-                <size>20 20</size>
-              </plane>
-            </geometry>
-            <material>
-              <script>
-                <uri>model://capstone/worlds/models/single_line/materials/scripts</uri>
-                <uri>model://capstone/worlds/models/single_line/materials/textures</uri>
-                <name>path/kobuki</name>
-              </script>
-            </material>
-          </visual>
-          <self_collide>0</self_collide>
-          <enable_wind>0</enable_wind>
-          <kinematic>0</kinematic>
-        </link>
-        <pose>2.79856 1.12607 -0.139655 0 -0 0</pose>
-      </model>
       <model name='walls'>
         <pose>0.895062 -1.51897 -0.139655 0 0 -1.57079</pose>
         <link name='Wall_0'>
@@ -1947,6 +1492,16 @@
       <model name='universe'>
         <pose>1.22992 3.18673 0.139655 0 -0 0</pose>
         <scale>1 1 1</scale>
+        <model name='single_line'>
+          <pose>4.02848 4.3128 0 0 -0 0</pose>
+          <scale>1 1 1</scale>
+          <link name='link'>
+            <pose>4.02848 4.3128 0 0 -0 0</pose>
+            <velocity>0 0 0 0 -0 0</velocity>
+            <acceleration>0 0 0 0 -0 0</acceleration>
+            <wrench>0 0 0 0 -0 0</wrench>
+          </link>
+        </model>
         <model name='cardboard_box'>
           <pose>-0.84204 6.82143 0.15 0 0 -1.52548</pose>
           <scale>1 1 1</scale>
@@ -2057,91 +1612,11 @@
             <wrench>0 0 0 0 -0 0</wrench>
           </link>
         </model>
-        <model name='cardboard_box_clone_17'>
-          <pose>2.90447 -2.91541 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>2.90447 -2.91541 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_18'>
-          <pose>3.51943 -2.7339 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>3.51943 -2.7339 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_19'>
-          <pose>3.77782 -0.9172 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>3.77782 -0.9172 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
         <model name='cardboard_box_clone_2'>
           <pose>-0.94435 8.91402 0.15 0 0 -1.52548</pose>
           <scale>1 1 1</scale>
           <link name='link'>
             <pose>-0.94435 8.91402 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_20'>
-          <pose>4.56923 0.37592 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>4.56923 0.37592 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_21'>
-          <pose>4.35729 0.97105 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>4.35729 0.97105 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_22'>
-          <pose>4.14652 1.5371 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>4.14652 1.5371 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_23'>
-          <pose>4.2731 2.12845 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>4.2731 2.12845 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='cardboard_box_clone_24'>
-          <pose>4.49862 2.68727 0.15 0 0 -1.52548</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>4.49862 2.68727 0.15 0 0 -1.52548</pose>
             <velocity>0 0 0 0 -0 0</velocity>
             <acceleration>0 0 0 0 -0 0</acceleration>
             <wrench>0 0 0 0 -0 0</wrench>
@@ -2212,16 +1687,6 @@
           <scale>1 1 1</scale>
           <link name='link'>
             <pose>-0.37684 3.85472 0.15 0 0 -1.52548</pose>
-            <velocity>0 0 0 0 -0 0</velocity>
-            <acceleration>0 0 0 0 -0 0</acceleration>
-            <wrench>0 0 0 0 -0 0</wrench>
-          </link>
-        </model>
-        <model name='single_line'>
-          <pose>4.02848 4.3128 0 0 -0 0</pose>
-          <scale>1 1 1</scale>
-          <link name='link'>
-            <pose>4.02848 4.3128 0 0 -0 0</pose>
             <velocity>0 0 0 0 -0 0</velocity>
             <acceleration>0 0 0 0 -0 0</acceleration>
             <wrench>0 0 0 0 -0 0</wrench>
