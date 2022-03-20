@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-import time
-
 import rospkg
-
 import rospy
 from cv_bridge import CvBridge
 import cv2 as cv
-
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 import numpy as np
 from tf.transformations import euler_from_quaternion
-import pure_pursuit_tb
+from pure_pursuit_tb import PurePursuit, read_points
+from wall_follow_tb import WallFollow
 
 
 class Capstone(object):
@@ -27,6 +24,7 @@ class Capstone(object):
         self.fixed_linear_speed = 0.18
         self.angular_rate_max = 2.84
         self.kp_task2 = 0.005
+        self.wall_follow = None
 
         # Subscribers, publishers, topics, etc
         self.lscan_sub = rospy.Subscriber("/scan", LaserScan, self.lscan_callback)  # Laser scan subscriber
@@ -38,8 +36,8 @@ class Capstone(object):
 
         # Wait until we get at least one data back from callbacks
         while self.laserScanData is None or self.odom.Pose.x is None or self.camRawData is None:
-            print("Waiting for all callbacks to get at least on data back")
-            time.sleep(1)
+            print("Waiting for all callbacks to get at least one data back")
+            self.rate.sleep()
 
     # LaserScan callback
     def lscan_callback(self, _data):
@@ -68,20 +66,6 @@ class Capstone(object):
     def cam_callback(self, _data):
         self.camRawData = _data
 
-    def find_largest_gap(self):
-        # See image in README file on how ranges are defined
-        ranges = np.array([self.laserScanData.ranges[228:282],
-                           self.laserScanData.ranges[281:335],
-                           self.laserScanData.ranges[0:28] + self.laserScanData.ranges[334:360],
-                           self.laserScanData.ranges[28:82],
-                           self.laserScanData.ranges[81:135]])
-
-        # Max range of laser scan sensor is 3.5m. Here we replace 'infinite' with 5m so that we can compare
-        # accurately when multiple ranges have infinite values
-        ranges[ranges == np.inf] = 5.0
-        ranges_ss = ss_iterable(ranges)
-        return np.argmax(ranges_ss) + 1
-
     class CurrOdom:
         class Pose:
             x = None
@@ -98,10 +82,11 @@ class Capstone(object):
 
     # Obstacle avoidance
     def task1(self):
-        # Find the largest gap among the 5 defined laser scan regions
-        gap = self.find_largest_gap()
-        print("S1: Largest gap at: {}, Current Pose (x,y,yaw): ({:.2f}, {:.2f}, {:.2f})".
-              format(gap, self.odom.Pose.x, self.odom.Pose.y, self.odom.Pose.yaw))
+        if self.wall_follow is None:  # Initialize object only once
+            print("*Task1: Running wall follow algorithm ...")
+            self.wall_follow = WallFollow()
+
+        self.wall_follow.follow_the_wall()
 
     # Line following
     def task2(self):
@@ -163,8 +148,8 @@ class Capstone(object):
         self.cam_sub.unregister()
         self.odom_sub.unregister()
         self.cmdvel_pub.unregister()
-        pure_pursuit = pure_pursuit_tb.PurePursuit(_waypoints=pure_pursuit_tb.read_points(path_waypoints),
-                                                   _rate=5)
+        pure_pursuit = PurePursuit(_waypoints=read_points(path_waypoints), _rate=5)
+
         # Follow the waypoints
         pure_pursuit.follow_waypoints()
         return True
@@ -213,17 +198,6 @@ class Capstone(object):
         self.twist_object.linear.x = 0.0
         self.twist_object.angular.z = 0.0
         self.cmdvel_pub.publish(self.twist_object)
-
-
-# An iterable sum of squares method
-def ss_iterable(_m):
-    _result = []
-    for i in range(len(_m)):
-        _ss = 0
-        for j in range(len(_m[i])):
-            _ss += _m[i][j] ** 2
-        _result.append(_ss)
-    return _result
 
 
 if __name__ == '__main__':

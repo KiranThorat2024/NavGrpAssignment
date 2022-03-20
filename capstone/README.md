@@ -7,9 +7,6 @@ Group 4 - Navistar
 * Kiran Thorat
 
 # Tasks
-## Task1: (B) Obstacle avoidance with follow the gap
-The laser scan data was split up into 5 equal sized regions as shown in this image:
-![LaserScan ranges](FollowGap_LaserScanRanges.png)
-
+## Task1: (A) Wall follow
 ## Task2: (A) Line following with object detection
-## Task3: (A) Go-to-goal using the Navigation Stack
+## Task3: (B) Pure pursuit using waypoints
