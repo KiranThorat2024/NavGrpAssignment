@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+import time
+
 import rospkg
 import rospy
 from cv_bridge import CvBridge
 import cv2 as cv
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 import numpy as np
 from tf.transformations import euler_from_quaternion
 from pure_pursuit_tb import PurePursuit, read_points
@@ -13,35 +15,61 @@ from wall_follow_tb import WallFollow
 
 
 class Capstone(object):
-    def __init__(self):
-        # Variables, constants, etc.
+    def __init__(self, _sim_mode, wall_distance, wall_follow_speed, collision_distance,
+                 task1_thresh):
+        # Variables and objects
         self.odom = self.CurrOdom()
         self.camRawData = None
         self.task3_complete = False
         self.bridge = CvBridge()
         self.twist_object = Twist()
-        self.fixed_linear_speed = 0.22
+        self.wall_follow = None
+        self.dist_traveled_x = 0.0
+        self.dist_traveled_y = 0.0
+        self.PREV_X = 0.0
+        self.PREV_Y = 0.0
+
+        # Constants
+        self.fixed_linear_speed = 0.12
         self.angular_rate_max = 2.84
         self.kp_task2 = 0.005
-        self.wall_follow = None
+        self.wall_distance = wall_distance
+        self.wall_follow_speed = wall_follow_speed
+        self.collision_distance = collision_distance
+        self.sim_mode = _sim_mode
+        self.TASK1_THRESH = task1_thresh
 
         # Subscribers, publishers, topics, etc
         self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)  # Odometry pose subscriber
-        self.cam_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.cam_callback)  # Camera subscriber
+        if sim_mode:  # Camera subscriber
+            self.cam_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.cam_callback)
+        else:
+            self.cam_sub = rospy.Subscriber("/raspicam_node/image/compressed", CompressedImage, self.cam_callback)
         self.cmdvel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(20)
         self.cmdvel_pub_rate = rospy.Rate(10)
 
         # Wait until we get at least one data back from callbacks
         while self.odom.Pose.x is None or self.camRawData is None:
-            print("Waiting for all callbacks to get at least one data back")
-            self.rate.sleep()
+            print("Waiting for callbacks to get at least one data back")
+            rospy.Rate(1).sleep()
+
+        self.PREV_X = self.odom.Pose.x
+        self.PREV_Y = self.odom.Pose.y
 
     # Odometry callback
     def odom_callback(self, _data):
         # Position data of relevance
         self.odom.Pose.x = _data.pose.pose.position.x
         self.odom.Pose.y = _data.pose.pose.position.y
+        
+        # Track distance
+        if not self.PREV_X is None:
+            self.dist_traveled_x += self.odom.Pose.x - self.PREV_X
+            self.dist_traveled_y += self.odom.Pose.y - self.PREV_Y
+
+        self.PREV_X = self.odom.Pose.x
+        self.PREV_Y = self.odom.Pose.y
 
         # Convert Quaternions to Eulers to calculate yaw
         _qx = _data.pose.pose.orientation.x
@@ -74,22 +102,28 @@ class Capstone(object):
             # y_ang = None
             z_ang = None
 
-    # Obstacle avoidance
+    # Wall follow
     def task1(self):
         if self.wall_follow is None:  # Initialize object only once
             print("*Task1: Running wall follow algorithm ...")
-            self.wall_follow = WallFollow()
+            self.wall_follow = WallFollow(self.wall_distance, self.wall_follow_speed, self.collision_distance)
 
+        print("Dist Travelled: ({:.2f}, {:.2f})".format(self.dist_traveled_x, self.dist_traveled_y))
         self.wall_follow.follow_the_wall()
 
     # Line following
     def task2(self):
+        print("task2, dist travelled ({:.2f}, {:.2f})".format(self.dist_traveled_x, self.dist_traveled_y))
         # Manipulate image and get the mask of blue line
-        img = self.bridge.imgmsg_to_cv2(self.camRawData, desired_encoding='bgr8')
+        if self.sim_mode:
+            img = self.bridge.imgmsg_to_cv2(self.camRawData, desired_encoding='bgr8')
+        else:
+            img = cv.imdecode(np.fromstring(self.camRawData.data, np.uint8), cv.IMREAD_COLOR)
+
         img_height, img_width, _ = img.shape
         img_cropped = img[img_height - 40:img_height][1:img_width]
         img_hsv = cv.cvtColor(img_cropped, cv.COLOR_BGR2HSV)
-        blue_range = np.array([[108, 40, 20], [125, 255, 255]])
+        blue_range = np.array([[100, 60, 60], [129, 255, 255]])
         img_masked_blue = cv.inRange(img_hsv, blue_range[0], blue_range[1])
 
         # Calculate centroid
@@ -123,7 +157,7 @@ class Capstone(object):
         print("**Task2: Err: {:.2f} AngRate: {:.2f}".format(err, angular_rate))
         cv.waitKey(1)
 
-    # Navigation goal
+    # Pure pursuit
     def task3(self):
         print("***Task3: Running pure pursuit ...")
         # Get the waypoints
@@ -153,14 +187,14 @@ class Capstone(object):
         while not self.task3_complete:  # Run state machine until task 3 is complete
             if state == 1:
                 self.task1()
-                if self.odom.Pose.y >= 4.0:
+                if self.odom.Pose.y >= self.TASK1_THRESH:
                     self.clean_task1()
                     state = 2
             elif state == 2:
                 self.task2()
-                if self.odom.Pose.x <= 0.8:
-                    self.clean_task2()
-                    state = 3
+                # if self.odom.Pose.x <= 0.8:
+                #     self.clean_task2()
+                #     state = 3
             elif state == 3:
                 self.task3_complete = self.task3()
 
@@ -197,7 +231,15 @@ class Capstone(object):
 
 if __name__ == '__main__':
     rospy.init_node('capstone', anonymous=True)
-    capstone = Capstone()
+
+    # Choose simulation mode else the custom Cristian Valadez room setup mode
+    sim_mode = False
+    if sim_mode:
+        capstone = Capstone(_sim_mode=True, wall_distance=0.5, wall_follow_speed=0.22, collision_distance=0.8,
+                            task1_thresh=4.0)
+    else:
+        capstone = Capstone(_sim_mode=False, wall_distance=0.2, wall_follow_speed=0.12, collision_distance=0.6,
+                            task1_thresh=0.7)
 
 
     def shutdownhook():
@@ -208,6 +250,3 @@ if __name__ == '__main__':
 
     rospy.on_shutdown(shutdownhook)
     capstone.run_statemachine()
-
-    # Run Task 1
-    # capstone.task1()

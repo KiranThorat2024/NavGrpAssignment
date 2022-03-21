@@ -6,22 +6,25 @@ import numpy as np
 
 
 class WallFollow(object):
-    def __init__(self):
-        # Variables, constants, etc
+    def __init__(self, desired_wall_distance, desired_speed, collision_distance):
+        # Variables and objects
         self.laserScanData = None
         self.msg = Twist()
-        self.msg.linear.x = 0.22  # Constant linear speed
+        self.error = 0  # Distance error
+
+        # Constants
+        self.DIST_STEADY = desired_wall_distance  # This is how far we want to be from wall
+        self.k = 2.0
+        self.msg.linear.x = desired_speed  # Constant linear speed
         self.ANGLE_PERP = 90  # Recall that 0deg is straight ahead and 90deg is straight right
         self.ANGLE_LOOKAHEAD = 60
-        self.DIST_STEADY = 0.5  # This is how far we want to be from wall
-        self.MAX_STEERING_ANGLE = 2.84
-        self.error = 0  # Distance error
-        self.k = 3.5
+        self.MAX_STEERING_ANGLE = 2.0  # Max is 2.84
+        self.COLLISION_DISTANCE = collision_distance
 
         # Subscribers and publishers
         self.lscan_sub = rospy.Subscriber("/scan", LaserScan, self.lscan_callback)  # Laser scan subscriber
         self.cmdvel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-        self.rate = rospy.Rate(15)
+        self.rate = rospy.Rate(20)
 
         # Wait until we get at least one data back from callbacks
         while self.laserScanData is None:
@@ -56,7 +59,8 @@ class WallFollow(object):
 
     # Detect if head on collision is imminent
     def head_on_collision_imminent(self):
-        if self.laserScanData.ranges[0] < 0.8:
+        head_dist = self.laserScanData.ranges[0]
+        if self.COLLISION_DISTANCE > head_dist > 0.2:
             return True
         else:
             return False
@@ -75,7 +79,7 @@ class WallFollow(object):
 
         # Detect if head on collision imminent, make robot start turning earlier to avoid
         if self.head_on_collision_imminent():
-            offset = 0.5
+            offset = 0.55
             steering_angle = offset
         else:
             offset = 0.0
@@ -90,8 +94,8 @@ class WallFollow(object):
         self.cmdvel_pub.publish(self.msg)
 
         # Print some stuff for debugging
-        print("Right: {:.2f} Proj: {:.2f} Error: {:.2f} SteerAng: {:.2f} Offset: {:.1f}".
-              format(dist, dist_proj, self.error, steering_angle, offset))
+        print("Right: {:.2f} Proj: {:.2f} Error: {:.2f} SteerAng: {:.2f} Offset: {:.1f} Front Dist: {:.2f}".
+              format(dist, dist_proj, self.error, steering_angle, offset, self.laserScanData.ranges[0]))
 
         self.rate.sleep()
 
@@ -100,3 +104,4 @@ class WallFollow(object):
         self.msg.linear.x = 0.0
         self.msg.angular.z = 0.0
         self.cmdvel_pub.publish(self.msg)
+        self.lscan_sub.unregister()

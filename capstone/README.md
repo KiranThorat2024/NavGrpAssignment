@@ -22,3 +22,4 @@ For this task, the robot follows the tape on the floor. Object detection was not
 
 ## Task3: (B) Pure pursuit using waypoints
 Pure pursuit algorithm using defined waypoints was used for this task.
+            self.wall_follow = WallFollow(self.desired_wall_distance)
