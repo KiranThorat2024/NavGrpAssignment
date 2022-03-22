@@ -6,6 +6,8 @@ Group 4 - Navistar
 * Amy Kofoed
 * Kiran Thorat
 
+See the powerpoint slides for more information.
+
 # How to run
 Make sure you add the following to your .bashrc file so that Gazebo knows where to find the model that was created for the blue line.
 ```bash
